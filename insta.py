@@ -7,6 +7,7 @@ from typing import Dict
 import textwrap
 from dotenv import load_dotenv
 import os
+import openai
 
 load_dotenv()
 
@@ -15,6 +16,8 @@ insta_username = os.getenv('insta_username')
 insta_password = os.getenv('insta_password')
 kton_username = os.getenv('kton_username')
 kton_password = os.getenv('kton_password')
+openai.api_key = os.getenv('openAI_key')
+
 
 # ##Logging in (No need to login until system is working)
 # cl = Client()
@@ -51,32 +54,52 @@ def getQuote():
     
 def getImage():
     ##Using Dall-e
-    ##Requests Unsplash
-    random_url="https://api.unsplash.com/photos/random"
-    access_key = "QyIVMq6A6fL2y7WlNE9XsU2X7F40JUSTj-nsCaX_MYI"
-    headers = {"Authorization": f"Client-ID {access_key}"}
-    params = {'query': 'modern building black', 'orientation': 'squarish'}
     
     try:
-        unsplash_response = requests.get(random_url,headers=headers,params=params)
-        unsplash_response.raise_for_status() #Anything thats not 200
-        random_image = unsplash_response.json()["urls"]["raw"]
-        
+        response = openai.Image.create(
+        prompt="anime city, like cyberpunk high quality",
+        n=1,
+        size="1024x1024"
+        )
+        imageUrl = response['data'][0]['url']
+        print(imageUrl)
         ##Saving the file
-        response = requests.get(random_image)
+        response = requests.get(imageUrl)
         with open('image.jpg', 'wb') as f:
             # Write the contents of the response to the file
             f.write(response.content)
             
-    except requests.exceptions.RequestException as e:
+    except openai.error.OpenAIError as e:
         print(f'Request failed: {e}')
+
+# def getImage():
+#     ##Using Dall-e
+#     ##Requests Unsplash
+#     random_url="https://api.unsplash.com/photos/random"
+#     access_key = "QyIVMq6A6fL2y7WlNE9XsU2X7F40JUSTj-nsCaX_MYI"
+#     headers = {"Authorization": f"Client-ID {access_key}"}
+#     params = {'query': 'modern building black', 'orientation': 'squarish'}
+    
+#     try:
+#         unsplash_response = requests.get(random_url,headers=headers,params=params)
+#         unsplash_response.raise_for_status() #Anything thats not 200
+#         random_image = unsplash_response.json()["urls"]["raw"]
+        
+#         ##Saving the file
+#         response = requests.get(random_image)
+#         with open('image.jpg', 'wb') as f:
+#             # Write the contents of the response to the file
+#             f.write(response.content)
+            
+#     except requests.exceptions.RequestException as e:
+#         print(f'Request failed: {e}')
 
 def createPost():
         # Open image
     img = Image.open("image.jpg")
     draw = ImageDraw.Draw(img)
-    font_size = 300
-    font = ImageFont.truetype("font.ttf", 300)
+    font_size = 1
+    font = ImageFont.truetype("font.ttf", font_size)
     
     # Get quote information
     quote = getQuote()['randomHighlight']
@@ -84,17 +107,28 @@ def createPost():
     text = quote['highlight']['Text']
     
     # Set background color
-    bg_color = (0, 0, 0, 108)
+    bg_color = (0, 0, 0, 60)
     
 
-    
     # Wrap text and calculate total height
     wrapped_text = textwrap.wrap(text, width=40) #Maximum 20 characters per line, splits into array of strings
     line_height = font.getsize('hg')[1] #random string to get rough height of a single line (returns a tuple of (height,width))
     total_height = len(wrapped_text) * line_height #jsut multiply each line by their heights
     
+    #Find the longest string in wrapped text and continually increase font until it reaches max
+    longest_string = max(wrapped_text, key=len)
+    
+    while font.getsize(longest_string)[0] < 0.8*img.size[0]:
+        font_size+=1
+        font = ImageFont.truetype("font.ttf", font_size)
+        line_height = font.getsize('hg')[1]
+        total_height = len(wrapped_text) * line_height
+    
+        
     # center vertically
     y = (img.height - total_height) / 2
+    
+    
     
     # Draw each line of wrapped text on the image
     for line in wrapped_text:
