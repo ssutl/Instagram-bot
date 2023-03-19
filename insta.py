@@ -34,7 +34,6 @@ def getQuote():
         response=requests.post(login_url, json=body)
         response.raise_for_status()  # raise an exception if the status code is not 2xx
         token = response.json()['token']
-        
         ##Retrieve random quote
         quote_url = "https://kindle-notes-manager-reloaded.fly.dev/books/random-highlight"
         headers = {'x-auth-token': token}
@@ -57,12 +56,11 @@ def getImage():
     
     try:
         response = openai.Image.create(
-        prompt="anime city, like cyberpunk high quality",
+        prompt="anime city, like cyberpunk, rainy.  high quality",
         n=1,
         size="1024x1024"
         )
         imageUrl = response['data'][0]['url']
-        print(imageUrl)
         ##Saving the file
         response = requests.get(imageUrl)
         with open('image.jpg', 'wb') as f:
@@ -73,7 +71,6 @@ def getImage():
         print(f'Request failed: {e}')
 
 # def getImage():
-#     ##Using Dall-e
 #     ##Requests Unsplash
 #     random_url="https://api.unsplash.com/photos/random"
 #     access_key = "QyIVMq6A6fL2y7WlNE9XsU2X7F40JUSTj-nsCaX_MYI"
@@ -97,7 +94,7 @@ def getImage():
 def createPost():
         # Open image
     img = Image.open("image.jpg")
-    draw = ImageDraw.Draw(img)
+    draw = ImageDraw.Draw(img, 'RGBA')
     font_size = 1
     font = ImageFont.truetype("font.ttf", font_size)
     
@@ -107,7 +104,7 @@ def createPost():
     text = quote['highlight']['Text']
     
     # Set background color
-    bg_color = (0, 0, 0, 60)
+    bg_color = (0, 0, 0, 200)  # Black color with 70% opacity
     
 
     # Wrap text and calculate total height
@@ -121,31 +118,40 @@ def createPost():
     while font.getsize(longest_string)[0] < 0.8*img.size[0]:
         font_size+=1
         font = ImageFont.truetype("font.ttf", font_size)
-        line_height = font.getsize('hg')[1]
+        line_height = font.getsize('hg')[1] * 2
         total_height = len(wrapped_text) * line_height
     
         
-    # center vertically
+    # the y-coordinate of the starting point of the text, 
+    # which is the point where the text will be drawn on the image.
     y = (img.height - total_height) / 2
     
-    
-    
     # Draw each line of wrapped text on the image
+    #In computing vertical axis goes from zero at top to image height at bottom !
     for line in wrapped_text:
         # Center horizontally
-        line_width = font.getsize(line)[0] #width
+        line_width = font.getsize(line)[0]
+        
+        #the horizontal position of the starting point of the text, 
+        # if the text is horizontally centered within the image.
         line_x = (img.width - line_width) / 2
         
-        # Draw background rectangle (defining top left and bottom right point)
-        bg_x1, bg_y1 = line_x - 10, y - 10
-        bg_x2, bg_y2 = line_x + line_width + 10, y + line_height + 10
+        # Draw background rectangle (defining top left and bottom right point) first line we add padding of 10
+        bg_x1, bg_y1 = line_x - 20, y - 10
+        bg_x2, bg_y2 = line_x + line_width + 20, y + line_height + 10 #bottom right
+        
+
+        # Draw background rectangle and text
         draw.rectangle((bg_x1, bg_y1, bg_x2, bg_y2), fill=bg_color)
         
-        # Draw text
-        draw.text((line_x, y), line, font=font, fill=(255, 255, 255))
+        # Calculate vertical position for text (to center it within the rectangle)
+        bg_center_y = (bg_y1 + bg_y2) / 2
+        text_y = bg_center_y - (font.getsize(line)[1] / 2)
+    
+        draw.text((line_x, text_y), line, font=font, fill=(255, 255, 255))
         
-        # Move to next line
-        y += line_height
+        # To move the y coordinate to the vertical position below previous line
+        y += line_height + 20
     
     # Save modified image
     img.save("overlay.jpg")
