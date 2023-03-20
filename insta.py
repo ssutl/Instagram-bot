@@ -8,6 +8,9 @@ import textwrap
 from dotenv import load_dotenv
 import os
 import openai
+import random
+import schedule
+import time
 
 load_dotenv()
 
@@ -18,13 +21,6 @@ kton_username = os.getenv('kton_username')
 kton_password = os.getenv('kton_password')
 openai.api_key = os.getenv('openAI_key')
 
-
-# ##Logging in (No need to login until system is working)
-# cl = Client()
-# cl.login(username=insta_username, password=insta_password)
-
-
-##Retrieve a random quote
 def getQuote():
     ##Log into KTON and recieve token
     login_url = "https://kindle-notes-manager-reloaded.fly.dev/login"
@@ -51,7 +47,7 @@ def getQuote():
     except requests.exceptions.RequestException as e:
         print(f'Request failed: {e}')
     
-def getImage():
+def getImageD():
     ##Using Dall-e
     
     try:
@@ -70,26 +66,26 @@ def getImage():
     except openai.error.OpenAIError as e:
         print(f'Request failed: {e}')
 
-# def getImage():
-#     ##Requests Unsplash
-#     random_url="https://api.unsplash.com/photos/random"
-#     access_key = "QyIVMq6A6fL2y7WlNE9XsU2X7F40JUSTj-nsCaX_MYI"
-#     headers = {"Authorization": f"Client-ID {access_key}"}
-#     params = {'query': 'modern building black', 'orientation': 'squarish'}
+def getImageU():
+    ##Requests Unsplash
+    random_url="https://api.unsplash.com/photos/random"
+    access_key = "QyIVMq6A6fL2y7WlNE9XsU2X7F40JUSTj-nsCaX_MYI"
+    headers = {"Authorization": f"Client-ID {access_key}"}
+    params = {'query': 'modern building black', 'orientation': 'squarish'}
     
-#     try:
-#         unsplash_response = requests.get(random_url,headers=headers,params=params)
-#         unsplash_response.raise_for_status() #Anything thats not 200
-#         random_image = unsplash_response.json()["urls"]["raw"]
+    try:
+        unsplash_response = requests.get(random_url,headers=headers,params=params)
+        unsplash_response.raise_for_status() #Anything thats not 200
+        random_image = unsplash_response.json()["urls"]["raw"]
         
-#         ##Saving the file
-#         response = requests.get(random_image)
-#         with open('image.jpg', 'wb') as f:
-#             # Write the contents of the response to the file
-#             f.write(response.content)
+        ##Saving the file
+        response = requests.get(random_image)
+        with open('image.jpg', 'wb') as f:
+            # Write the contents of the response to the file
+            f.write(response.content)
             
-#     except requests.exceptions.RequestException as e:
-#         print(f'Request failed: {e}')
+    except requests.exceptions.RequestException as e:
+        print(f'Request failed: {e}')
 
 def createPost():
         # Open image
@@ -100,8 +96,12 @@ def createPost():
     
     # Get quote information
     quote = getQuote()['randomHighlight']
+    global title, author
     title, author = quote['title'], quote['author']
     text = quote['highlight']['Text']
+    global caption
+    caption=f'Quote extracted from {author.replace(";"," & ")}\'s "{title}" {randomEmoji()}'
+    
     
     # Set background color
     bg_color = (0, 0, 0, 200)  # Black color with 70% opacity
@@ -125,6 +125,8 @@ def createPost():
     # the y-coordinate of the starting point of the text, 
     # which is the point where the text will be drawn on the image.
     y = (img.height - total_height) / 2
+    
+    
     
     # Draw each line of wrapped text on the image
     #In computing vertical axis goes from zero at top to image height at bottom !
@@ -153,23 +155,44 @@ def createPost():
         # To move the y coordinate to the vertical position below previous line
         y += line_height + 20
     
+    #Draw rectangle bottom right
+    
+    
     # Save modified image
     img.save("overlay.jpg")
     
-    
+def randomEmoji():    
+    EmojiArray = ["📚","🧠","🥭","⌛","♾️","📜","🎯"]
+    randomEmojis = random.sample(EmojiArray,2)
+    return " ".join(randomEmojis)
 
+def postFunction():
+    print("Uploading Post")
+    getImageD()
+    createPost()
+    cl.photo_upload('overlay.jpg',caption,extra_data={
+        "like_and_view_counts_disabled":True,
+        "disable_comments":True
+    })
+    
+    
+testing = input("Are you testing the software?")
 
-getImage()
-createPost()
-        
+if testing == "yes" or testing == "YES" or testing == "Y" or testing == "y":
+    imageGeneration = input("Do you want to use DALLE (D) or no (any key)?")
     
+    if imageGeneration == "D" or imageGeneration == "d":
+        getImageD()
+    else:
+        getImageU()   
+    createPost()
+else:
+    # cl = Client()
+    # cl.login(username=insta_username, password=insta_password)
+    schedule.every().day.at("14:46").do(postFunction)
+    schedule.every().day.at("14:47").do(postFunction)
     
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
     
-    
-    
-    
-# getQuote()
-    
-    
-# caption="first post"
-# cl.photo_upload('tests.png',caption)
