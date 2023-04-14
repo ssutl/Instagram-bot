@@ -11,7 +11,7 @@ import openai
 import random
 import schedule
 import time
-
+import json
 load_dotenv()
 
 # Get the environment variables
@@ -21,38 +21,45 @@ kton_username = os.getenv('kton_username')
 kton_password = os.getenv('kton_password')
 openai.api_key = os.getenv('openAI_key')
 
-def getQuote():
-    ##Log into KTON and recieve token
-    login_url = "https://kindle-notes-manager-reloaded.fly.dev/login"
-    body = {'username': kton_username, 'password': kton_password}
+# def getQuote():
+#     #Log into KTON and recieve token
+#     login_url = "https://kindle-notes-manager-reloaded.fly.dev/login"
+#     body = {'username': kton_username, 'password': kton_password}
     
-    try:
-        response=requests.post(login_url, json=body)
-        response.raise_for_status()  # raise an exception if the status code is not 2xx
-        token = response.json()['token']
-        ##Retrieve random quote
-        quote_url = "https://kindle-notes-manager-reloaded.fly.dev/books/random-highlight"
-        headers = {'x-auth-token': token}
+#     try:
+#         response=requests.post(login_url, json=body)
+#         response.raise_for_status()  # raise an exception if the status code is not 2xx
+#         token = response.json()['token']
+#         ##Retrieve random quote
+#         quote_url = "https://kindle-notes-manager-reloaded.fly.dev/books/random-highlight"
+#         headers = {'x-auth-token': token}
         
-        try: 
-            quote_response = requests.get(quote_url,headers=headers)
-            quote_response.raise_for_status()  # raise an exception if the status code is not 2xx
-            randomHighlight = quote_response.json()
-            return randomHighlight
-        except requests.exceptions.RequestException as e:
-            print(f'Request failed: {e}')
+#         try: 
+#             quote_response = requests.get(quote_url,headers=headers)
+#             quote_response.raise_for_status()  # raise an exception if the status code is not 2xx
+#             randomHighlight = quote_response.json()
+#             return randomHighlight
+#         except requests.exceptions.RequestException as e:
+#             print(f'Request failed: {e}')
             
             
             
-    except requests.exceptions.RequestException as e:
-        print(f'Request failed: {e}')
-    
+#     except requests.exceptions.RequestException as e:
+#         print(f'Request failed: {e}')
+
+def getQuote(index):
+    with open("quotesList.json", "r") as jsonFile:
+        json_data = json.load(jsonFile)
+        if index >= len(json_data):
+            return None
+        return json_data[index]
+        
 def getImageD():
     ##Using Dall-e
     
     try:
         response = openai.Image.create(
-        prompt="anime city, like cyberpunk, rainy.  high quality",
+        prompt="anime city, like cyberpunk, rainy, vibrant.  high quality",
         n=1,
         size="1024x1024"
         )
@@ -87,7 +94,7 @@ def getImageU():
     except requests.exceptions.RequestException as e:
         print(f'Request failed: {e}')
 
-def createPost():
+def createPost(index):
         # Open image
     img = Image.open("image.jpg")
     draw = ImageDraw.Draw(img, 'RGBA')
@@ -95,10 +102,10 @@ def createPost():
     font = ImageFont.truetype("font.ttf", font_size)
     
     # Get quote information
-    quote = getQuote()['randomHighlight']
+    quote = getQuote(index)
     global title, author
-    title, author = quote['title'], quote['author']
-    text = quote['highlight']['Text']
+    title, author = quote['Title'], quote['Author']
+    text = quote['Text']
     global caption
     caption=f'Quote extracted from {author.replace(";"," & ")}\'s "{title}" {randomEmoji()}'
     
@@ -167,15 +174,29 @@ def randomEmoji():
     return " ".join(randomEmojis)
 
 def postFunction():
-    print("Uploading Post")
-    getImageD()
-    createPost()
-    cl.photo_upload('overlay.jpg',caption,extra_data={
-        "like_and_view_counts_disabled":True,
-        "disable_comments":True
-    })
+     global current_index
+     print("Uploading Post")
+     quote = getQuote(current_index)
+     if quote is not None:
+        # Extract quote data
+        quote_text = quote["Text"]
+        quote_author = quote["Author"]
+        quote_title = quote["Title"]
+        
+        # Create post
+        getImageD()
+        createPost(current_index)
+        # cl.photo_upload('overlay.jpg', caption, extra_data={
+        #     "like_and_view_counts_disabled": True,
+        #     "disable_comments": True
+        # })
+        print(f"Posted: {quote_text} - {quote_author} ({quote_title})")
+        current_index += 1  # Increment index for next post
+     else:
+        print("No more quotes to post")
     
     
+
 testing = input("Are you testing the software?")
 
 if testing == "yes" or testing == "YES" or testing == "Y" or testing == "y":
@@ -189,8 +210,10 @@ if testing == "yes" or testing == "YES" or testing == "Y" or testing == "y":
 else:
     # cl = Client()
     # cl.login(username=insta_username, password=insta_password)
-    schedule.every().day.at("14:46").do(postFunction)
-    schedule.every().day.at("14:47").do(postFunction)
+    ##When code starts start from this index
+    current_index = 0
+    schedule.every().day.at("06:28").do(postFunction)
+
     
     while True:
         schedule.run_pending()
