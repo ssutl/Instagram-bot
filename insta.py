@@ -107,7 +107,7 @@ def createPost(index):
     title, author = quote['Title'], quote['Author']
     text = quote['Text']
     global caption
-    caption=f'Quote extracted from {author.replace(";"," & ")}\'s "{title}" {randomEmoji()}'
+    caption=f'Quote extracted from {author.replace(";"," & ")}\'s "{title}" {randomEmoji()} \n #Quotes #Books #HumblySubtly #MentalMobility'
     
     
     # Set background color
@@ -186,10 +186,10 @@ def postFunction():
         # Create post
         getImageD()
         createPost(current_index)
-        # cl.photo_upload('overlay.jpg', caption, extra_data={
-        #     "like_and_view_counts_disabled": True,
-        #     "disable_comments": True
-        # })
+        cl.photo_upload('overlay.jpg', caption, extra_data={
+            "like_and_view_counts_disabled": True,
+            "disable_comments": True
+        })
         print(f"Posted: {quote_text} - {quote_author} ({quote_title})")
         current_index += 1  # Increment index for next post
      else:
@@ -208,11 +208,11 @@ if testing == "yes" or testing == "YES" or testing == "Y" or testing == "y":
         getImageU()   
     createPost()
 else:
-    # cl = Client()
-    # cl.login(username=insta_username, password=insta_password)
-    ##When code starts start from this index
+    cl = Client()
+    cl.login(username=insta_username, password=insta_password)
+    #When code starts start from this index
     current_index = 0
-    schedule.every().day.at("06:28").do(postFunction)
+    schedule.every().day.at("08:00").do(postFunction)
 
     
     while True:
