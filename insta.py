@@ -212,7 +212,7 @@ else:
     cl.login(username=insta_username, password=insta_password)
     #When code starts start from this index
     current_index = 0
-    schedule.every().day.at("08:00").do(postFunction)
+    schedule.every().day.at("02:24").do(postFunction)
 
     
     while True:
