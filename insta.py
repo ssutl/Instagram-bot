@@ -21,31 +21,7 @@ kton_username = os.getenv('kton_username')
 kton_password = os.getenv('kton_password')
 openai.api_key = os.getenv('openAI_key')
 
-# def getQuote():
-#     #Log into KTON and recieve token
-#     login_url = "https://kindle-notes-manager-reloaded.fly.dev/login"
-#     body = {'username': kton_username, 'password': kton_password}
-    
-#     try:
-#         response=requests.post(login_url, json=body)
-#         response.raise_for_status()  # raise an exception if the status code is not 2xx
-#         token = response.json()['token']
-#         ##Retrieve random quote
-#         quote_url = "https://kindle-notes-manager-reloaded.fly.dev/books/random-highlight"
-#         headers = {'x-auth-token': token}
-        
-#         try: 
-#             quote_response = requests.get(quote_url,headers=headers)
-#             quote_response.raise_for_status()  # raise an exception if the status code is not 2xx
-#             randomHighlight = quote_response.json()
-#             return randomHighlight
-#         except requests.exceptions.RequestException as e:
-#             print(f'Request failed: {e}')
-            
-            
-            
-#     except requests.exceptions.RequestException as e:
-#         print(f'Request failed: {e}')
+
 
 def getQuote(index):
     with open("quotesList.json", "r") as jsonFile:
@@ -57,9 +33,23 @@ def getQuote(index):
 def getImageD():
     ##Using Dall-e
     
+    # Generate an ultra-realistic anime cityscape that immerses the viewer in a bright and futuristic metropolis. The attention to detail is paramount – from the intricately designed skyscrapers with realistic glass reflections to the individual leaves swaying on the holographic trees. Every aspect of the scene should evoke a sense of realism and wonder.
+    
+    #Action photography of a parkour athlete jumping between urban structures, using a fast shutter speed.
+    
+    # Lifestyle photography of someone listening to vinyl records, using warm tones to evoke nostalgia.
+    
+    # Lifestyle photography of a black 80s DJs playing music and mixing vinyls with his crew, using warm tones to evoke nostalgia.
+    
+    #Lifestyle photography of the 80s streets with black people. DJs playing music and mixing vinyls. Kids running. Palm trees. using warm tones to evoke nostalgia.
+    
+    #Lifestyle photography of the 80s streets with black people. DJs passionately mixing vinyl records on turntables, where the vinyl decks themselves are miniature cityscapes, complete with intricate details. Kids running. Palm trees. using warm tones to evoke nostalgia.
+    
+    
+    
     try:
         response = openai.Image.create(
-        prompt="anime city, like cyberpunk, rainy, vibrant.  high quality",
+        prompt="Lifestyle photography of the 80s streets with black people.Vibrant. DJs passionately mixing vinyl records on turntables, where the vinyl decks themselves are miniature cityscapes, complete with intricate details. Using warm tones to evoke nostalgia.",
         n=1,
         size="1024x1024"
         )
@@ -206,16 +196,19 @@ if testing == "yes" or testing == "YES" or testing == "Y" or testing == "y":
         getImageD()
     else:
         getImageU()   
-    createPost()
+    createPost(28)
 else:
     cl = Client()
     cl.login(username=insta_username, password=insta_password)
     #When code starts start from this index
     current_index = 0
-    schedule.every().day.at("02:24").do(postFunction)
+    schedule.every().day.at("04:00").do(postFunction)
 
     
     while True:
         schedule.run_pending()
         time.sleep(1)
+
+
+
     
