@@ -6,6 +6,10 @@ Here's a draft for the README:
 
 An Instagram bot to extract quotes from **KTON** (an app for managing Kindle highlights) and automatically upload them to an Instagram account.
 
+![image](https://github.com/user-attachments/assets/88aafacb-396b-4e41-8a6b-dc1353e44169)
+![image](https://github.com/user-attachments/assets/0a4c2eca-edb5-4642-8063-f91fce724c84)
+
+
 ## Features
 
 - **Quote Parsing**: Extracts Kindle highlights from KTON.
