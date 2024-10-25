@@ -10,7 +10,7 @@ An Instagram bot to extract quotes from **KTON** (an app for managing Kindle hig
 
 - **Quote Parsing**: Extracts Kindle highlights from KTON.
 - **Automated Posting**: Periodically posts quotes to Instagram.
-- **Customizable Overlay**: Applies a preset image overlay on each post.
+- **Customizable Overlay**: Use DallE to generate a background Image.
 
 ## Requirements
 
